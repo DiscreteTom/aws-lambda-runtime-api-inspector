@@ -1,4 +1,6 @@
 use aws_lambda_runtime_proxy::{LambdaRuntimeApiClient, Proxy};
+use http::{Request, Response};
+use http_body_util::{BodyExt, Full};
 
 // targets bit flags
 const NEXT_INVOCATION: usize = 1 << 0;
@@ -38,12 +40,31 @@ async fn main() {
           && path.starts_with("/2018-06-01/runtime/invocation/")
           && path.ends_with("/error"))
       {
-        println!("{:?}", req);
-        let res = LambdaRuntimeApiClient::forward(req).await;
-        if let Ok(res) = &res {
-          println!("{:?}", res);
-        }
-        res
+        // collect request and print it
+        let (parts, body) = req.into_parts();
+        let bytes = body.collect().await.unwrap().to_bytes();
+        println!(
+          "Runtime API Request: {} {} headers: {:?} body: {:?}",
+          parts.method, parts.uri, parts.headers, bytes
+        );
+
+        // forward the request, collect the response
+        let res = LambdaRuntimeApiClient::new()
+          .await
+          .send_request(Request::from_parts(parts, Full::new(bytes)))
+          .await
+          .unwrap();
+        let (parts, body) = res.into_parts();
+        let bytes = body.collect().await.unwrap().to_bytes();
+
+        // print the response
+        println!(
+          "Runtime API Response: [{}] headers: {:?} body: {:?}",
+          parts.status, parts.headers, bytes
+        );
+
+        // return the response
+        Ok(Response::from_parts(parts, Full::new(bytes)))
       } else {
         // just forward the request
         LambdaRuntimeApiClient::forward(req).await
