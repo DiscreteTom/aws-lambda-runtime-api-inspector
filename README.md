@@ -17,7 +17,7 @@ A lambda layer to print the runtime API requests and responses.
 
 ### As a Binary Executable
 
-If you are using a custom lambda runtime (for rust, golang, c++, etc) or container image, you can run the filter as a parent process of your main handler process.
+If you are using a custom lambda runtime (for rust, golang, c++, etc) or container image, you can run this as a parent process of your main handler process.
 
 1. Download the prebuilt zip from the [release page](https://github.com/DiscreteTom/aws-lambda-runtime-api-inspector/releases/latest) to get the `aws-lambda-runtime-api-inspector` executable. You can also build it yourself by running `cargo build --release`.
 2. Modify the entry command of the lambda function to `aws-lambda-runtime-api-inspector <handler-command> <handler-args>`
